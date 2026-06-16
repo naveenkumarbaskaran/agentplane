@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>agentplane — Runtime policy control plane for production agents</title>
+  <meta name="description" content="Block, degrade, escalate — without a redeploy. Runtime behavioral governance for production AI agents."/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23050d2a'/><circle cx='8' cy='16' r='3' fill='%23f97316'/><circle cx='16' cy='16' r='4' fill='%23fb923c'/><circle cx='24' cy='16' r='3' fill='%2322d3ee'/><line x1='11' y1='16' x2='12' y2='16' stroke='%23f97316' stroke-width='1.5'/><line x1='20' y1='16' x2='21' y2='16' stroke='%23fb923c' stroke-width='1.5'/></svg>"/>
+  <style>
+    :root {
+      --bg: #020818;
+      --bg2: #050d2a;
+      --bg3: #0a0520;
+      --orange: #f97316;
+      --orange2: #fb923c;
+      --cyan: #22d3ee;
+      --green: #22c55e;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(249,115,22,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.7; }
+    a { color: var(--orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.08) 0%, transparent 70%);
+    }
+    .hero img.banner { max-width: 960px; width: 100%; border-radius: 12px; margin-bottom: 40px; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--orange), var(--orange2), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+    .hero p.tagline { font-size: 1.2rem; color: var(--muted); max-width: 640px; margin: 0 auto 32px; }
+    .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    .badges img { height: 22px; }
+    .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 0.95rem;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary { background: var(--orange); color: #000; }
+    .btn-secondary { background: transparent; color: var(--orange); border: 1px solid var(--orange); }
+
+    .section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-title {
+      font-size: 1.8rem; font-weight: 700; margin-bottom: 12px;
+      background: linear-gradient(90deg, var(--orange), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .section-sub { color: var(--muted); margin-bottom: 48px; font-size: 1.05rem; }
+
+    /* Why agentplane table */
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .compare-table th { text-align: left; padding: 12px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .compare-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .compare-table tr:hover td { background: rgba(249,115,22,0.04); }
+    .yes { color: var(--green); font-weight: 600; }
+    .no { color: rgba(148,163,184,0.5); }
+
+    /* Features grid */
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 28px; transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(249,115,22,0.4); transform: translateY(-2px); }
+    .feature-icon { font-size: 2rem; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--orange2); margin-bottom: 8px; }
+    .feature-card p { color: var(--muted); font-size: 0.92rem; }
+
+    /* Code blocks */
+    .code-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+    .code-header { padding: 12px 20px; background: rgba(249,115,22,0.08); border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--orange2); font-family: monospace; }
+    pre { padding: 24px; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; }
+    code { font-family: 'Fira Code', 'SF Mono', monospace; color: #e2e8f0; }
+    .kw { color: #f97316; }
+    .fn { color: #22d3ee; }
+    .st { color: #86efac; }
+    .cm { color: #64748b; }
+    .nu { color: #fbbf24; }
+
+    /* Stack section */
+    .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .stack-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 20px; text-align: center;
+    }
+    .stack-card .name { font-weight: 700; color: var(--orange); font-size: 1rem; margin-bottom: 4px; }
+    .stack-card .role { color: var(--muted); font-size: 0.85rem; }
+    .stack-card.highlight { border-color: rgba(249,115,22,0.5); background: rgba(249,115,22,0.05); }
+
+    /* API table */
+    .api-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .api-table th { text-align: left; padding: 10px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .api-table td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: monospace; font-size: 0.85rem; }
+    .api-table tr:hover td { background: rgba(249,115,22,0.03); }
+    .tag-blocking { background: rgba(239,68,68,0.15); color: #fca5a5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: sans-serif; }
+    .tag-nonblocking { background: rgba(34,197,94,0.15); color: #86efac; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: sans-serif; }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* Footer */
+    footer { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.9rem; }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <img class="banner" src="https://raw.githubusercontent.com/naveenkumarbaskaran/agentplane/master/assets/banner.svg" alt="agentplane"/>
+  <h1>Runtime policy control plane<br/>for production agents.</h1>
+  <p class="tagline">Block, degrade, escalate — without a redeploy. Behavioral governance that adapts in real time.</p>
+  <div class="badges">
+    <img src="https://github.com/naveenkumarbaskaran/agentplane/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+    <img src="https://img.shields.io/pypi/v/agentplane-py.svg" alt="PyPI"/>
+    <img src="https://img.shields.io/pypi/pyversions/agentplane-py.svg" alt="Python"/>
+    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"/>
+  </div>
+  <div class="hero-btns">
+    <a class="btn btn-primary" href="https://github.com/naveenkumarbaskaran/agentplane">GitHub</a>
+    <a class="btn btn-secondary" href="https://pypi.org/project/agentplane-py/">PyPI</a>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- Why -->
+<div class="section">
+  <div class="section-title">Why agentplane</div>
+  <p class="section-sub">OPA, Cedar, and Casbin answer "is this allowed?" — a static yes/no. agentplane answers <strong style="color:var(--orange2)">"how should this agent behave right now, given everything that's happened"</strong> — and changes the answer without a redeploy.</p>
+  <table class="compare-table">
+    <thead>
+      <tr><th></th><th>OPA / Cedar / Casbin</th><th>agentplane</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Decision model</td><td class="no">Static yes/no</td><td class="yes">✓ Stateful behavioral history</td></tr>
+      <tr><td>Runtime update</td><td class="no">Config reload</td><td class="yes">✓ Live — no restart</td></tr>
+      <tr><td>Versioning</td><td class="no">External</td><td class="yes">✓ Built-in (diff, rollback, promote)</td></tr>
+      <tr><td>Escalation</td><td class="no">None</td><td class="yes">✓ Alert → HITL → Degrade → Block</td></tr>
+      <tr><td>Degradation</td><td class="no">None</td><td class="yes">✓ Modes with timed recovery</td></tr>
+      <tr><td>Plug/Unplug</td><td class="no">None</td><td class="yes">✓ Hard lockout per agent or tenant</td></tr>
+      <tr><td>Agent-native</td><td class="no">No</td><td class="yes">✓ hookpoints, tenant_id, token/cost budgets</td></tr>
+      <tr><td>Audit</td><td class="no">External</td><td class="yes">✓ Append-only JSONL, every evaluation</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider"/>
+
+<!-- Install -->
+<div class="section">
+  <div class="section-title">Install</div>
+  <div class="code-section">
+    <div class="code-header">bash</div>
+    <pre><code><span class="cm"># zero-dependency core</span>
+pip install agentplane-py
+
+<span class="cm"># with OpenTelemetry</span>
+pip install <span class="st">"agentplane-py[otel]"</span>
+
+<span class="cm"># with persistent store + sync</span>
+pip install <span class="st">"agentplane-py[sqlite,sync]"</span>
+
+<span class="cm"># everything</span>
+pip install <span class="st">"agentplane-py[all]"</span></code></pre>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- Quickstart -->
+<div class="section">
+  <div class="section-title">Quickstart</div>
+  <div class="code-section">
+    <div class="code-header">python</div>
+    <pre><code><span class="kw">from</span> agentplane <span class="kw">import</span> (
+    PolicyEngine, Policy, Selector, PolicyContext,
+    AllowlistRule, RateRule, RedactRule, AuditRule,
+)
+
+engine = PolicyEngine()
+
+engine.add_policy(Policy(
+    id=<span class="st">"acme.data-access.v1"</span>,
+    selector=Selector(tenants=[<span class="st">"acme"</span>], tools=[<span class="st">"sql_run"</span>]),
+    blocking=[
+        AllowlistRule(tools=[<span class="st">"sql_run"</span>, <span class="st">"search"</span>]),
+        RateRule(limit=<span class="nu">100</span>, window=<span class="st">"1h"</span>, per=<span class="st">"tenant"</span>),
+        RedactRule(fields=[<span class="st">"ssn"</span>, <span class="st">"api_key"</span>]),
+    ],
+    non_blocking=[AuditRule()],
+    priority=<span class="nu">100</span>,
+))
+
+ctx = PolicyContext.new(
+    agent_id=<span class="st">"my-agent"</span>, tenant_id=<span class="st">"acme"</span>,
+    hookpoint=<span class="st">"before_tool_call"</span>, tool_name=<span class="st">"sql_run"</span>,
+)
+
+<span class="kw">await</span> engine.evaluate(ctx)  <span class="cm"># raises PolicyBlocked or PolicyDegraded on enforcement</span></code></pre>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- Features -->
+<div class="section">
+  <div class="section-title">Features</div>
+  <p class="section-sub">Everything needed to govern agents in production — without changing agent code.</p>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Blocking + Non-blocking</h3>
+      <p>Blocking rules wait for a decision. Non-blocking rules fire async. Agents never wait for audit, alerts, or metrics.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3>Stateful Escalation</h3>
+      <p>Time-aware chains: Alert → HITL → Degrade → Block. Tracks history — 3 breaches in 10 min escalates differently than 1 breach a week ago.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Plug / Unplug</h3>
+      <p>Hard lockout per agent or entire tenant. Cut all access instantly — no redeploy. Re-plug to restore. Perfect for budget exhaustion or incidents.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <h3>Versioning</h3>
+      <p>Publish, diff, rollback. Every change is audited. Rollback creates a new version — history is never destroyed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Precise Selectors</h3>
+      <p>Target by agent, tenant, tool, hookpoint, or tag. One policy can cover all agents; another just one tool for one tenant in prod.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔗</div>
+      <h3>agenthooks Integration</h3>
+      <p>One line: <code>engine.attach(registry)</code>. Policies enforce at hookpoints automatically — no agent code changes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <h3>Embedded + Service</h3>
+      <p>Embed in-process for zero latency. Or run the service for centralized policy management. Both sync — agents work offline.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <h3>Degradation Modes</h3>
+      <p>READ_ONLY · NO_EXTERNAL · RATE_THROTTLE · HUMAN_LOOP · SAFE_TOOLS_ONLY · FULL_BLOCK. Auto-recover by time or condition.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- Plug/Unplug highlight -->
+<div class="section">
+  <div class="section-title">Plug / Unplug</div>
+  <p class="section-sub">Hard kill switch for agents. Cut all access — no rules evaluated, no tools reachable — until you re-plug.</p>
+  <div class="code-section">
+    <div class="code-header">python</div>
+    <pre><code><span class="kw">from</span> agentplane <span class="kw">import</span> PolicyEngine, PlugBoard
+
+board = PlugBoard()
+engine = PolicyEngine(plug_board=board)
+
+<span class="cm"># Agent runs out of daily budget — cut all access</span>
+board.unplug(<span class="st">"billing-agent"</span>, reason=<span class="st">"budget exhausted"</span>, by=<span class="st">"ops-team"</span>)
+
+<span class="cm"># Security incident — lock out entire tenant</span>
+board.unplug_all(<span class="st">"acme"</span>, reason=<span class="st">"security incident"</span>, by=<span class="st">"security-team"</span>)
+
+<span class="cm"># Restore access</span>
+board.plug(<span class="st">"billing-agent"</span>)</code></pre>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- API Coverage -->
+<div class="section">
+  <div class="section-title">Rule Coverage</div>
+  <table class="api-table">
+    <thead><tr><th>Rule</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>AllowlistRule</td><td><span class="tag-blocking">blocking</span></td><td>Tool allowlist</td></tr>
+      <tr><td>DenylistRule</td><td><span class="tag-blocking">blocking</span></td><td>Tool denylist</td></tr>
+      <tr><td>RedactRule</td><td><span class="tag-blocking">blocking</span></td><td>Mark fields as redacted in audit</td></tr>
+      <tr><td>RateRule</td><td><span class="tag-blocking">blocking</span></td><td>Sliding-window rate limiter per agent/tenant/session</td></tr>
+      <tr><td>RequireTenantRule</td><td><span class="tag-blocking">blocking</span></td><td>Tenant allowlist</td></tr>
+      <tr><td>TokenBudgetRule</td><td><span class="tag-blocking">blocking</span></td><td>Token budget per window</td></tr>
+      <tr><td>CostBudgetRule</td><td><span class="tag-blocking">blocking</span></td><td>USD cost budget per window</td></tr>
+      <tr><td>ApiAllowlistRule</td><td><span class="tag-blocking">blocking</span></td><td>API path + method allowlist</td></tr>
+      <tr><td>ApiDenylistRule</td><td><span class="tag-blocking">blocking</span></td><td>API path + method denylist</td></tr>
+      <tr><td>InjectionScanRule</td><td><span class="tag-blocking">blocking</span></td><td>Prompt injection detection</td></tr>
+      <tr><td>AuditRule</td><td><span class="tag-nonblocking">non-blocking</span></td><td>JSONL audit every evaluation</td></tr>
+      <tr><td>AlertRule</td><td><span class="tag-nonblocking">non-blocking</span></td><td>Log / webhook alerts</td></tr>
+      <tr><td>CostTrackingRule</td><td><span class="tag-nonblocking">non-blocking</span></td><td>Cumulative cost tracking</td></tr>
+      <tr><td>MetricsRule</td><td><span class="tag-nonblocking">non-blocking</span></td><td>OTel metrics emission</td></tr>
+      <tr><td>PIIScanRule</td><td><span class="tag-nonblocking">non-blocking</span></td><td>PII detection and logging</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider"/>
+
+<!-- Stack -->
+<div class="section">
+  <div class="section-title">The Stack</div>
+  <p class="section-sub">agentplane is the control plane. Each layer has one job.</p>
+  <div class="stack-grid">
+    <div class="stack-card highlight">
+      <div class="name">agentplane</div>
+      <div class="role">control plane — runtime policy, versioning, escalation</div>
+    </div>
+    <div class="stack-card">
+      <div class="name">wire-ai</div>
+      <div class="role">governance — loops, HITL, SLA, audit</div>
+    </div>
+    <div class="stack-card">
+      <div class="name">agenthooks</div>
+      <div class="role">extensibility — hookpoints, customer hooks</div>
+    </div>
+    <div class="stack-card">
+      <div class="name">AgentGuard</div>
+      <div class="role">safety — injection, PII, toxic, cost</div>
+    </div>
+    <div class="stack-card">
+      <div class="name">agent-gateway</div>
+      <div class="role">routing — protocol translation</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<footer>
+  <p>Apache 2.0 · <a href="https://github.com/naveenkumarbaskaran/agentplane">GitHub</a> · <a href="https://pypi.org/project/agentplane-py/">PyPI</a></p>
+</footer>
+
+</body>
+</html>
