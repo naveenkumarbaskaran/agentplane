@@ -65,4 +65,11 @@ __all__ = [
     "PolicyNotFound", "PolicyVersionError", "EscalationError", "SyncError",
     # Version
     "__version__",
+    # Service
+    "create_app",
 ]
+
+try:
+    from agentplane.service.app import create_app
+except ImportError:
+    pass
