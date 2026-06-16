@@ -44,7 +44,9 @@ _section "2. Public API exports"
 EXPORT_RESULT=$("$PYTHON" -c "
 import sys; sys.path.insert(0, 'src')
 import agentplane
-missing = [x for x in agentplane.__all__ if getattr(agentplane, x, None) is None]
+# create_app is optional — only available with [service] extra
+optional = {'create_app'}
+missing = [x for x in agentplane.__all__ if x not in optional and getattr(agentplane, x, None) is None]
 if missing:
     print('MISSING:' + ','.join(missing))
     sys.exit(1)

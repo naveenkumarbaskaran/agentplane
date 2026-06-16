@@ -40,7 +40,8 @@ jobs:
           python -c "
           import sys; sys.path.insert(0, 'src')
           import agentplane
-          missing = [x for x in agentplane.__all__ if getattr(agentplane, x, None) is None]
+          optional = {'create_app'}
+          missing = [x for x in agentplane.__all__ if x not in optional and getattr(agentplane, x, None) is None]
           if missing:
               print('MISSING:', missing); sys.exit(1)
           print(f'All {len(agentplane.__all__)} exports OK — version', agentplane.__version__)
