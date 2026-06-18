@@ -3,7 +3,7 @@
 import asyncio
 
 import agentplane
-from agentplane import AllowlistRule, PolicyContext, PolicyEngine, RateRule, Selector
+from agentplane import AllowlistRule, PolicyEngine, RateRule, Selector
 from agentplane.core.policy import Policy
 from agentplane.engine.decorators import enforce, policy_guard, require_policy
 

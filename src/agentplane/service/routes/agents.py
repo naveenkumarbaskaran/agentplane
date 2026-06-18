@@ -7,12 +7,12 @@ except ImportError as exc:  # pragma: no cover
         "agentplane service requires fastapi — install with: pip install 'agentplane-py[service]'"
     ) from exc
 
+from agentplane.service.routes.policies import _policy_to_response
 from agentplane.service.schemas import (
     AgentStatusResponse,
     PolicyListResponse,
     UnplugRequest,
 )
-from agentplane.service.routes.policies import _policy_to_response
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 

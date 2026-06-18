@@ -2,10 +2,8 @@
 
 import asyncio
 
-import agentplane
 from agentplane import (
     AllowlistRule,
-    PolicyContext,
     PolicyEngine,
     RateRule,
     RedactRule,
@@ -50,7 +48,7 @@ async def main() -> None:
 
     # Diff v1 → v2
     diff = vm.diff("acme.data-access", 1, 2)
-    print(f"\nDiff v1 → v2:")
+    print("\nDiff v1 → v2:")
     print(f"  Added blocking rules:   {diff.added_blocking}")
     print(f"  Removed blocking rules: {diff.removed_blocking}")
 

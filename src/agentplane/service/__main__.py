@@ -9,7 +9,7 @@ except ImportError as exc:  # pragma: no cover
         "agentplane service requires uvicorn — install with: pip install 'agentplane-py[service]'"
     ) from exc
 
-from agentplane.service.app import create_app
+from agentplane.service.app import create_app  # noqa: E402
 
 if __name__ == "__main__":
     app = create_app()

@@ -6,9 +6,9 @@ import agentplane
 from agentplane import (
     AllowlistRule,
     CostBudgetRule,
+    PlugBoard,
     PolicyContext,
     PolicyEngine,
-    PlugBoard,
     RateRule,
     Selector,
 )
@@ -47,7 +47,7 @@ async def main() -> None:
 
     # Agent runs out of budget — ops unplugs it
     board.unplug("billing-agent", reason="daily cost budget exhausted", by="ops-team")
-    print(f"⚡ billing-agent: unplugged by ops-team")
+    print("⚡ billing-agent: unplugged by ops-team")
 
     try:
         await engine.evaluate(ctx)

@@ -9,7 +9,6 @@ from agentplane import (
     Degrade,
     EscalationChain,
     EscalationLevel,
-    HITL,
     PolicyContext,
     PolicyEngine,
     RateRule,
